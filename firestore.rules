@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net - Default Deny-All Rule
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Helper check string ID formats to prevent poison inputs and wallet exhaustion
+    function isValidId(id) {
+      return id is string && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    // Entitiy Validation Blueprints for data structure integrity
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+        'id', 'plate', 'driverName', 'cargoType', 'weight', 'carrier', 
+        'priority', 'urgent', 'status', 'protocols', 'timeline', 
+        'createdAt', 'lastUpdatedAt', 'createdBy'
+      ]) && data.keys().size() <= 15
+      && data.id is string && data.id.size() <= 64
+      && data.plate is string && data.plate.size() <= 15
+      && data.driverName is string && data.driverName.size() <= 150
+      && data.cargoType is string && data.cargoType.size() <= 150
+      && data.weight is number && data.weight > 0 && data.weight <= 200.0
+      && data.carrier is string && data.carrier.size() <= 150
+      && data.priority in ['normal', 'alta']
+      && data.urgent is bool
+      && data.status in ['Draft', 'Waiting', 'Completed', 'Cancelled']
+      && data.protocols is list
+      && data.timeline is list
+      && data.createdAt is string && data.createdAt.size() <= 100
+      && data.lastUpdatedAt is string && data.lastUpdatedAt.size() <= 100
+      && data.createdBy is string && data.createdBy.size() <= 150
+      && (!data.keys().hasAny(['cancelReason']) || (data.cancelReason is string && data.cancelReason.size() <= 1000));
+    }
+
+    function isValidSystemSettings(data) {
+      return data.keys().hasAll(['currentSystemDate']) && data.keys().size() == 1
+      && data.currentSystemDate is string && data.currentSystemDate.size() <= 15;
+    }
+    
+    // Global operational settings matching the YYYY-MM-DD date tracker
+    match /system/config {
+      allow read: if true;
+      allow write: if isValidSystemSettings(request.resource.data);
+    }
+
+    // System-wide operational logs
+    match /system/logs {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Master Orders matching vehicle dispatch and tracking desk
+    match /orders/{orderId} {
+      allow read: if true;
+      
+      allow create: if isValidId(orderId) 
+                    && request.resource.data.id == orderId
+                    && isValidOrder(request.resource.data);
+                    
+      allow update: if isValidId(orderId) 
+                    && request.resource.data.id == orderId
+                    && isValidOrder(request.resource.data)
+                    && request.resource.data.createdAt == resource.data.createdAt  // Immortal Field check
+                    && request.resource.data.createdBy == resource.data.createdBy  // Immortal Field check
+                    // Terminal State Locking check (No updates on completed or cancelled, unless returning status)
+                    && (resource.data.status in ['Draft', 'Waiting'] || resource.data.status == request.resource.data.status);
+                    
+      allow delete: if true; // Deletions allowed to enable terminal cleaning with audit trails
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Represents an active or historic vehicle triaging order at Grupo Fertipar.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique Order ID (e.g., ORD-2026-101)."
+        },
+        "plate": {
+          "type": "string",
+          "description": "License plate of the vehicle."
+        },
+        "driverName": {
+          "type": "string",
+          "description": "Name of the driver."
+        },
+        "cargoType": {
+          "type": "string",
+          "description": "Type of fertilizer cargo."
+        },
+        "weight": {
+          "type": "number",
+          "description": "Estimated weight in tonnes (TO)."
+        },
+        "carrier": {
+          "type": "string",
+          "description": "Carrier / transportadora."
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["normal", "alta"],
+          "description": "Priority level of the order."
+        },
+        "urgent": {
+          "type": "boolean",
+          "description": "Pulsing priority indicator."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Draft", "Waiting", "Completed", "Cancelled"],
+          "description": "Operational triage status."
+        },
+        "cancelReason": {
+          "type": "string",
+          "description": "Justification reasoning for cancellations if status is Cancelled."
+        },
+        "protocols": {
+          "type": "array",
+          "description": "List of attached PDF protocols."
+        },
+        "timeline": {
+          "type": "array",
+          "description": "Historic trace of audit logs."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation ISO date timestamp."
+        },
+        "lastUpdatedAt": {
+          "type": "string",
+          "description": "Last updated ISO date timestamp."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Name of operator creating the order."
+        }
+      },
+      "required": [
+        "id",
+        "plate",
+        "driverName",
+        "cargoType",
+        "weight",
+        "carrier",
+        "priority",
+        "urgent",
+        "status",
+        "protocols",
+        "timeline",
+        "createdAt",
+        "lastUpdatedAt",
+        "createdBy"
+      ]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Global operational desk settings synced across operators.",
+      "type": "object",
+      "properties": {
+        "currentSystemDate": {
+          "type": "string",
+          "description": "Active operational system date in YYYY-MM-DD format."
+        }
+      },
+      "required": ["currentSystemDate"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Active vehicle dispatch orders of Grupo Fertipar."
+    },
+    "/system/config": {
+      "schema": "SystemSettings",
+      "description": "Global settings like the current operational system date."
+    }
+  }
+}

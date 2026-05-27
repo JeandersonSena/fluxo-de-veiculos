@@ -1,0 +1,6 @@
+{
+  "name": "Desk de Marcação de Cargas",
+  "description": "Painel de triagem rápida, despacho e fluxo de veículos e cargas para faturamento e logística industrial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
